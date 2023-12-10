@@ -81,7 +81,7 @@ def tests():
         ax.set_xlabel('Iterations')
         ax.set_ylabel('Fitness')
         fitness_list = main(row[0], row[1], row[2])
-        ax.set_title(label="M = %s, E = %s, Q = %s | Best = %s" % (row[0], row[1], row[2], int(min(fitness_list))))
+        ax.set_title(label="M=%s, E=%s, Q=%s | Best=%s" % (row[0], row[1], row[2], int(min(fitness_list))))
         ax.plot(np.arange(len(fitness_list)), fitness_list)
 
     plt.show()
