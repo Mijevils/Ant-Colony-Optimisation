@@ -1,5 +1,3 @@
-import datetime
-
 import numpy as np
 import random
 import xml.etree.ElementTree as ET
@@ -30,10 +28,10 @@ def extract_costs(xml_file):
     return edge_costs, cities
 
 
-def generate_path(cities, start, pheromones):
+def generate_path(cities, start, pheromones, edge_costs):
     """
     Description: Calculates the path of an ant.
-    Parameters: An integer (n), which determines the number of locations in the graph
+    Parameters: An integer (cities), which determines the number of locations in the graph
                 An integer (start), containing the value of the first city to be visited
                 A numpy array (pheromones), which stores the values of the pheromone drops on each graph link
     Returns: The ordered list of nodes that the ant will visit
@@ -43,12 +41,16 @@ def generate_path(cities, start, pheromones):
     all_cities = np.arange(0, cities)  # Create an ordered list of all nodes
 
     for city in range(1, cities):
+        heuristic = []
         unvisited = np.delete(all_cities, path)  # Remove visited nodes
         if city == (cities - 1):
             choice = unvisited[0]
         else:
             next_pheromones = np.delete(pheromones[path[-1]], path)  # Get pheromones for all potential next nodes
-            choice = random.choices(unvisited, weights=next_pheromones, cum_weights=None,k=1)  # Picks a next city at random, but weighted
+            next_edges = np.delete(edge_costs[path[-1]], path)
+            for i in range(len(next_edges)):
+                heuristic.append((next_pheromones[i] / next_edges[i]) / (np.sum(next_pheromones) / np.sum(next_edges)))
+            choice = random.choices(unvisited, weights=heuristic, cum_weights=None,k=1)  # Picks a next city at random, but weighted
         path = np.append(path, choice)  # Add city to path
     return path
 
@@ -97,24 +99,26 @@ def plot_results(fitness_list, m, iterations):
 
 
 def main(m, e, Q):
-    edge_costs, cities = extract_costs('burma.xml')  # load the cost matrix and the amount of cities
+    edge_costs, cities = extract_costs('brazil.xml')  # load the cost matrix and the amount of cities
     pheromones = np.random.rand(cities, cities)  # Initialise random pheromones
-    iterations = int(10000 / m)  # Easier to keep track of iterations, given by the number of evaluations divided by the number of ants
+    np.fill_diagonal(pheromones, 0)  # set pheromone diagonals to 0
+
+    iterations = int(10000 / m)  # By diving evaluations by ants, we get the number of iterations
 
     start_node = np.random.randint(cities)  # Randomly pick a start node
     fitness_list = []  # List that will store the average fitness per iteration
 
     for x in range(iterations):
+
         total_fitness = 0
         pheromone_update = np.zeros((cities, cities), dtype='longdouble')  # no pheromone drops as no ants have moved
 
         for ant in range(m):
-            path = generate_path(cities, start_node, pheromones)  # Generate the path
+            path = generate_path(cities, start_node, pheromones, edge_costs)  # Generate the path
             fitness = evaluate_path(path, edge_costs)  # Evaluate the path
 
             total_fitness += fitness
-            reward = np.longdouble(Q) / np.longdouble(
-                fitness)  # Calculate Q/fitness, in order to reward high fitness more, decrease Q
+            reward = np.longdouble(Q) / np.longdouble(fitness)  # Calculate Q/fitness, in order to reward high fitness more, decrease Q
             pheromone_update = np.add(pheromone_update, update_pheromones(reward, path, cities))
 
         pheromones = np.add(pheromones, pheromone_update)
@@ -124,6 +128,7 @@ def main(m, e, Q):
 
     plot_results(fitness_list, m, iterations)
     best_fitness = min(fitness_list)
+
     return best_fitness
 
 # pheromone * (1/cost) / total_pheromone*(1/total_cost)
