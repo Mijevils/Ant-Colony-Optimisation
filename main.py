@@ -73,15 +73,15 @@ def tests():
                 '4': [100, 0.5, 0.5], '5': [100, 1.0, 1.0], '6': [100, 1.5, 1.5],
                 '7': [150, 0.5, 0.5], '8': [150, 1.0, 1.0], '9': [150, 1.5, 1.5]}      
     
-    fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(14, 7), gridspec_kw={'hspace': 0.6, 'wspace': 0.3})
+    fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(14, 7), gridspec_kw={'hspace': 0.6, 'wspace': 0.4})
     fig.tight_layout()
     
     for i, ax in enumerate(fig.axes):
         row = test_dic[str(i + 1)]
-        ax.set_title(label="M = %s, E = %s, Q = %s" % (row[0], row[1], row[2]))
         ax.set_xlabel('Iterations')
         ax.set_ylabel('Fitness')
         fitness_list = main(row[0], row[1], row[2])
+        ax.set_title(label="M = %s, E = %s, Q = %s | Best = %s" % (row[0], row[1], row[2], int(min(fitness_list))))
         ax.plot(np.arange(len(fitness_list)), fitness_list)
 
     plt.show()
